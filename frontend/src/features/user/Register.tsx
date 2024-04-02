@@ -1,13 +1,25 @@
+import { useAppDispatch } from "@/store";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { registerUser } from "./usersSlice";
 
 const Register = () => {
+  const dispatch = useAppDispatch();
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   function submitRegister(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    const userData = {
+      username,
+      email,
+      password,
+    };
+
+    dispatch(registerUser(userData));
   }
 
   return (
@@ -22,10 +34,13 @@ const Register = () => {
         <p className="block mt-1 font-sans text-base antialiased font-normal leading-relaxed text-gray-700">
           Nice to meet you! Enter your details to register.
         </p>
-        <form className="max-w-screen-lg mt-8 mb-2 w-80 sm:w-96">
+        <form
+          className="max-w-screen-lg mt-8 mb-2 w-80 sm:w-96"
+          onSubmit={submitRegister}
+        >
           <div className="flex flex-col gap-6 mb-1">
             <h6 className="block -mb-3 font-sans text-base antialiased font-semibold leading-relaxed tracking-normal text-blue-gray-900">
-              User Name
+              Username
             </h6>
             <div className="relative h-11 w-full min-w-[200px]">
               <input
@@ -102,7 +117,7 @@ const Register = () => {
           </div>
           <button
             className="mt-6 block w-full select-none rounded-lg bg-gray-900 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-gray-900/10 transition-all hover:shadow-lg hover:shadow-gray-900/20 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
-            type="button"
+            type="submit"
           >
             sign up
           </button>
