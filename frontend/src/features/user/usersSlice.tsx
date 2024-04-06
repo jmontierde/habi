@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { apiRequest } from "@/lib/apiRequest";
 
 // type UserState = {
 //     users:
@@ -12,36 +13,75 @@ interface RegisterUserData {
 }
 
 interface UserState {
+  user: string | null;
   isLoading: boolean;
   error: string | null;
-  registered: boolean;
+  isAuthenticated: boolean;
 }
 
 const initialState: UserState = {
+  user: "",
   isLoading: false,
   error: null,
-  registered: false,
+  isAuthenticated: false,
 };
 
-interface ApiError {
-  message: string;
-  // Add other error properties if your API provides them
+interface LoginPayload {
+  username: string;
+  password: string;
 }
 
 export const registerUser = createAsyncThunk<void, RegisterUserData>(
   "user/registerUser",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/register",
-        userData
-      );
+      const response = await apiRequest.post(`/api/auth/register`, userData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error as ApiError);
+      if (axios.isAxiosError(error)) {
+        // Axios error
+        return rejectWithValue(error.response?.data.message);
+      } else {
+        // Other types of errors
+        return rejectWithValue("An error occurred");
+      }
     }
   }
 );
+
+export const loginUser = createAsyncThunk(
+  "user/loginUser",
+  async (payload: LoginPayload, { rejectWithValue }) => {
+    try {
+      const response = await apiRequest.post(`/auth/login`, payload);
+
+      localStorage.setItem("user", JSON.stringify(response.data));
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        // Axios error
+        return rejectWithValue(error.response?.data.message);
+      } else {
+        // Other types of errors
+        return rejectWithValue("An error occurred");
+      }
+    }
+  }
+);
+export const logoutUser = createAsyncThunk("user/logoutUser", async () => {
+  try {
+    const response = await apiRequest.post(`/auth/logout`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // Axios error
+      throw new Error(error.response?.data.message);
+    } else {
+      // Other types of errors
+      throw new Error("An error occurred");
+    }
+  }
+});
 
 const userSlice = createSlice({
   name: "user",
@@ -54,11 +94,37 @@ const userSlice = createSlice({
     }),
       builder.addCase(registerUser.fulfilled, (state) => {
         state.isLoading = false;
-        state.registered = true;
+        state.isAuthenticated = true;
       }),
       builder.addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || "An error occurred";
+        state.error = action.payload as string | null;
+      });
+    builder.addCase(loginUser.pending, (state) => {
+      state.isLoading = false;
+      state.error = null;
+    }),
+      builder.addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+      }),
+      builder.addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string | null;
+      });
+    builder.addCase(logoutUser.pending, (state) => {
+      state.isLoading = false;
+      state.error = null;
+    }),
+      builder.addCase(logoutUser.fulfilled, (state) => {
+        state.isLoading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+      }),
+      builder.addCase(logoutUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string | null;
       });
   },
 });
