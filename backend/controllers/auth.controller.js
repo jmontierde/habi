@@ -34,37 +34,50 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { username, password } = req.body;
 
-  const user = await prisma.user.findUnique({
-    where: { username },
-  });
+  try {
+    // CHECK IF THE USER EXISTS
 
-  if (!user) return res.status(404).json({ message: "Invalid Credentials!" });
+    const user = await prisma.user.findUnique({
+      where: { username },
+    });
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!user) return res.status(400).json({ message: "Invalid Credentials!" });
 
-  if (!isPasswordValid)
-    res.status(401).json({ message: "Invalid Credentials!" });
+    // CHECK IF THE PASSWORD IS CORRECT
 
-  const age = 1000 * 60 * 60 * 24 * 7;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  const token = jwt.sign(
-    {
-      id: user.id,
-    },
-    process.env.JWT__SECRET_KEY,
-    { expiresIn: age }
-  );
+    if (!isPasswordValid)
+      return res.status(400).json({ message: "Invalid Credentials!" });
 
-  const { password: userPassword, ...userInfo } = user;
+    // GENERATE COOKIE TOKEN AND SEND TO THE USER
 
-  res
-    .cookie("token", token, {
-      httpOnly: true,
-      // secure:true,
-      maxAge: age,
-    })
-    .status(200)
-    .json(userInfo);
+    // res.setHeader("Set-Cookie", "test=" + "myValue").json("success")
+    const age = 1000 * 60 * 60 * 24 * 7;
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        isAdmin: false,
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: age }
+    );
+
+    const { password: userPassword, ...userInfo } = user;
+
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        // secure:true,
+        maxAge: age,
+      })
+      .status(200)
+      .json(userInfo);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Failed to login!" });
+  }
 };
 export const logout = (req, res) => {
   res.clearCookie("token").status(200).json({ message: "Logout Successful" });

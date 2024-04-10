@@ -71,6 +71,7 @@ export const loginUser = createAsyncThunk(
 export const logoutUser = createAsyncThunk("user/logoutUser", async () => {
   try {
     const response = await apiRequest.post(`/auth/logout`);
+    localStorage.removeItem("user");
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

@@ -13,7 +13,8 @@ import {
 import { logoutUser } from "@/features/user/usersSlice";
 
 const Navbar = () => {
-  const isAuthenticated = useAppSelector((state) => state.user);
+  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -36,9 +37,6 @@ const Navbar = () => {
 
       {isAuthenticated ? (
         <>
-          {/* <Link to="/register">
-            <img src={userIcon} className="w-8 h-8" alt="" />
-          </Link> */}
           <DropdownMenu>
             <DropdownMenuTrigger>
               <img src={userIcon} className="w-8 h-8" alt="" />
